@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avaliação: topografia abdominal do cão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f1ea; --panel:#fffdf9; --ink:#24211d; --muted:#6c655c; --line:#ddd4c7;
+    --accent:#1f5f6b; --ok:#2f7d4f; --bad:#b4442f;
+    --unk:#f3f4f5; --unkStroke:#3d4750;
+    --figado:#8a3b2e; --estomago:#d99a6c; --baco:#7a3d6e; --rimd:#b5653a; --rime:#c97a4a; --bexiga:#e6c35a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;font-size:17px;line-height:1.45}
+  header{padding:22px 28px 6px;max-width:1400px;margin:0 auto}
+  h1{font-family:Fraunces,Georgia,serif;font-size:clamp(24px,3vw,34px);margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0}
+  main{max-width:1400px;margin:0 auto;padding:14px 28px 40px;display:grid;grid-template-columns:minmax(360px,1fr) minmax(300px,400px);gap:26px;align-items:start}
+  @media (max-width:980px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .stage{position:relative;padding:10px}
+  svg{width:100%;height:auto;display:block;max-height:88vh;user-select:none}
+  .org{cursor:pointer}
+  .org .shape{fill:var(--unk);stroke:var(--unkStroke);stroke-width:2;stroke-dasharray:6 4}
+  .org:hover .shape{fill:#e3e7ea}
+  .org.sel .shape{stroke:var(--accent);stroke-width:4;stroke-dasharray:none;fill:#cfe3e6}
+  .org.answered .shape{fill:#e8eef0}
+  .checked .org .shape{stroke-dasharray:none;stroke-width:2;stroke:rgba(0,0,0,.35)}
+  .badge circle{fill:#fff;stroke:var(--ink);stroke-width:2}
+  .badge text{font:700 17px "Source Sans 3",sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+  .org.sel .badge circle{fill:var(--accent);stroke:var(--accent)}
+  .org.sel .badge text{fill:#fff}
+  .lbl{cursor:pointer}
+  .lbl .box{fill:#fff;stroke:#b9b0a3;stroke-width:1.5}
+  .lbl:hover .box{stroke:var(--accent)}
+  .lbl.sel .box{stroke:var(--accent);stroke-width:3}
+  .lbl .lead{stroke:#6b6b6b;stroke-width:1.5;fill:none}
+  .lbl .num{fill:var(--ink)} .lbl .numt{fill:#fff;font:700 15px "Source Sans 3",sans-serif;text-anchor:middle;dominant-baseline:central}
+  .lbl .txt{font:600 17px "Source Sans 3",sans-serif;fill:var(--ink);dominant-baseline:central}
+  .lbl .txt.empty{fill:#9a9186;font-weight:400;font-style:italic}
+  .lbl .sub2{font:600 13px "Source Sans 3",sans-serif;dominant-baseline:central}
+  .lbl.ok .box{fill:#e2f1e7;stroke:var(--ok);stroke-width:2.5}
+  .lbl.bad .box{fill:#f7e3de;stroke:var(--bad);stroke-width:2.5}
+  .lbl.ok .num{fill:var(--ok)} .lbl.bad .num{fill:var(--bad)}
+  .pop{position:absolute;z-index:5;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(40,30,20,.18);padding:10px;width:210px;display:none}
+  .pop.show{display:block}
+  .pop h4{margin:2px 4px 8px;font-size:15px;color:var(--muted);font-weight:600}
+  .pop button{display:block;width:100%;text-align:left;font:600 16px "Source Sans 3",sans-serif;padding:8px 10px;margin:3px 0;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  .pop button:hover{border-color:var(--accent);background:#f1f7f8}
+  .pop button.cur{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pop button.clear{font-weight:400;color:var(--muted);border-style:dashed;font-size:14px}
+  h2{font-family:Fraunces,serif;font-size:21px;margin:0 0 8px}
+  .muted{color:var(--muted)}
+  .progress{background:var(--bg);border-radius:10px;padding:10px 12px;margin:12px 0;display:flex;justify-content:space-between;align-items:center}
+  .progress b{font-family:Fraunces,serif;font-size:24px}
+  .bar{height:6px;background:#e7dfd3;border-radius:4px;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+  .btn{font:600 15px "Source Sans 3",sans-serif;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+  .btn:hover:not(:disabled){border-color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .score{font-family:Fraunces,serif;font-size:40px;margin:4px 0}
+  .info{border-radius:10px;padding:12px 14px;margin-top:12px;background:var(--bg)}
+  .info h3{margin:0 0 6px;font-size:17px}
+  .info p{margin:4px 0;font-size:15.5px}
+  .info .us{border-top:1px dashed rgba(0,0,0,.15);margin-top:8px;padding-top:8px}
+  ol.disc{padding-left:20px;margin:6px 0} ol.disc li{margin:5px 0;font-size:15.5px}
+  .legend{font-size:13.5px;color:var(--muted);margin-top:8px}
+  .linkbtn{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;font-size:14px;padding:0;margin-top:14px}
+  .stage.locked svg{filter:blur(9px);pointer-events:none}
+  .timer{display:flex;align-items:center;justify-content:space-between;background:#1f2a2e;color:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px}
+  .timer b{font-family:Fraunces,serif;font-size:34px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  .timer.warn{background:var(--bad)}
+  .timer span{font-size:13.5px;opacity:.85}
+  .exits{font-size:14px;color:var(--muted);margin-top:8px}
+  .exits.has{color:var(--bad);font-weight:600}
+  .ov{position:fixed;inset:0;background:rgba(30,26,22,.62);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+  .ov.show{display:flex}
+  .ovc{background:var(--panel);border-radius:16px;max-width:520px;width:100%;padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .ovc h2{font-size:26px;margin-bottom:10px}
+  .ovc ul{padding-left:20px;margin:8px 0 16px} .ovc li{margin:6px 0}
+  .ovc label{display:block;font-weight:600;margin:10px 0 4px}
+  .ovc input{width:100%;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px}
+  .ovc input:focus{outline:none;border-color:var(--accent)}
+  .ovc .btn{margin-top:16px;font-size:17px;padding:11px 18px}
+  .ovc.alert h2{color:var(--bad)}
+  .receipt{border:1.5px dashed var(--line);border-radius:10px;padding:10px 14px;margin:12px 0;font-size:15px;background:#fff}
+  .receipt div{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+  .receipt div span:first-child{color:var(--muted)}
+  .nota{font-family:Fraunces,serif;font-size:44px;margin:2px 0}
+  .reason{font-size:14.5px;border-radius:8px;padding:6px 10px;display:inline-block;margin-bottom:4px}
+  .reason.bad{background:#f7e3de;color:var(--bad)} .reason.neutral{background:var(--bg);color:var(--muted)}
+  .prof{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+  .prof.show{display:block}
+  .turmas{display:flex;gap:10px}
+  .ovc label.tr{flex:1;display:flex;align-items:center;gap:8px;margin:0;font-weight:600;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;cursor:pointer}
+  .ovc label.tr input{width:auto;margin:0}
+  .ovc label.tr:has(input:checked){border-color:var(--accent);background:#eef6f7}
+  .sending{display:flex;align-items:center;gap:10px;color:var(--muted);margin:10px 0}
+  .spin{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{background:#f7e3de;color:var(--bad);border-radius:9px;padding:10px 12px;font-size:15px;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Desafio: onde está cada órgão?</h1>
+  <p class="sub">Cão em <b>decúbito dorsal</b>, visto de cima (pela face ventral). Clique em cada estrutura numerada e escolha o nome do órgão. Valor: <b>0,6 ponto</b> · tempo: <b>2 minutos</b>.</p>
+</header>
+<main>
+  <section class="card stage locked" id="stage">
+    <svg viewBox="-160 0 860 1000" id="dog" aria-label="Cão em decúbito dorsal, vista ventral, cabeça para cima (cranial), com estruturas numeradas">
+      <defs>
+        <clipPath id="trunkClip"><path id="trunkPath" d="M50 236 C48 226 56 220 72 220 C96 220 116 222 136 216 C156 204 176 192 202 192 C224 192 240 196 256 188 C290 175 318 168 340 165 C420 158 520 150 620 145 C700 142 780 148 830 175 C865 195 880 225 882 262 C880 297 865 327 830 347 C780 374 700 380 620 377 C520 372 420 364 340 357 C318 354 290 347 256 334 C240 326 224 330 202 330 C176 330 156 318 136 306 C116 300 96 302 72 302 C56 302 48 296 50 286 C46 270 46 252 50 236 Z"/></clipPath>
+      </defs>
+      <g transform="translate(-140,34)" fill="none" stroke="#2f73b5" stroke-width="3">
+        <path d="M0 18 C14 0 46 0 60 18 C46 36 14 36 0 18 Z"/>
+        <circle cx="30" cy="18" r="10" fill="#2f73b5" stroke="none"/>
+        <circle cx="27" cy="15" r="3" fill="#fff" stroke="none"/>
+        <path d="M-6 56 L70 56" stroke-width="2.5"/>
+        <rect x="-8" y="52" width="26" height="8" rx="3" fill="#fff"/>
+        <text x="-4" y="88" fill="#2f73b5" stroke="none" font-family="Source Sans 3, sans-serif" font-size="15" font-weight="700">vista ventral</text>
+        <text x="-4" y="105" fill="#5b7ea3" stroke="none" font-family="Source Sans 3, sans-serif" font-size="13">observador acima</text>
+      </g>
+      <g transform="matrix(0 1 -1 0 540 0)">
+      <g stroke="#2b2b2b" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M876 248 C905 246 940 244 978 250 C988 252 988 268 978 270 C940 276 905 276 876 274 Z" fill="#c9c9c9"/>
+        <path d="M770 168 C815 150 860 120 900 82 C910 70 930 66 944 72 C956 78 954 92 942 98 C930 104 920 110 912 118 C880 150 850 178 820 196 Z" fill="#c9c9c9"/>
+        <path d="M770 372 C815 390 860 420 900 458 C910 470 930 474 944 468 C956 462 954 448 942 442 C930 436 920 430 912 422 C880 390 850 362 820 344 Z" fill="#c9c9c9"/>
+        <path d="M160 204 C164 172 178 146 204 132 C220 124 236 136 234 158 C232 182 220 200 206 210 Z" fill="#b5b5b5"/>
+        <path d="M160 318 C164 350 178 376 204 390 C220 398 236 386 234 364 C232 340 220 322 206 312 Z" fill="#b5b5b5"/>
+        <use href="#trunkPath" fill="#c4c4c4"/>
+      </g>
+      <g clip-path="url(#trunkClip)" pointer-events="none">
+        <path d="M250 225 C330 200 450 190 600 186 C720 184 800 200 850 240 C860 260 860 270 850 285 C800 325 720 338 600 336 C450 332 330 322 250 297 Z" fill="#d9d9d9"/>
+        <path d="M600 150 C640 175 690 172 720 150 Z M640 372 C680 350 730 352 760 372 Z M330 168 C370 188 410 180 440 160 Z M330 354 C370 334 410 340 440 362 Z" fill="#aaaaaa" opacity=".7"/>
+      </g>
+      <use href="#trunkPath" fill="none" stroke="#2b2b2b" stroke-width="2.2" pointer-events="none"/>
+      <g fill="none" stroke="#2b2b2b" stroke-width="1.6" stroke-linecap="round" pointer-events="none">
+        <path d="M156 234 C124 232 96 238 80 250 C72 256 72 266 80 272 C96 284 124 290 156 288" opacity=".5"/>
+        <path d="M72 226 C98 230 120 232 138 224" opacity=".45"/>
+        <path d="M72 296 C98 292 120 290 138 298" opacity=".45"/>
+        <path d="M236 212 C246 240 246 282 236 310" opacity=".35"/>
+      </g>
+      <path d="M50 242 C44 254 44 268 50 280 C60 284 70 276 70 261 C70 246 60 238 50 242 Z" fill="#333" pointer-events="none"/>
+      <g fill="#8a8a8a" stroke="#555" stroke-width="1" pointer-events="none">
+        <circle cx="420" cy="208" r="3.5"/><circle cx="500" cy="203" r="3.5"/><circle cx="580" cy="200" r="3.5"/><circle cx="660" cy="200" r="3.5"/><circle cx="740" cy="205" r="3.5"/>
+        <circle cx="420" cy="314" r="3.5"/><circle cx="500" cy="319" r="3.5"/><circle cx="580" cy="322" r="3.5"/><circle cx="660" cy="322" r="3.5"/><circle cx="740" cy="317" r="3.5"/>
+      </g>
+      <g pointer-events="none">
+        <g fill="none" stroke="#b0b0b0" stroke-width="7" stroke-linecap="round" opacity=".9">
+          <path d="M612 262 C626 246 640 274 654 258 C668 242 680 270 694 254"/>
+          <path d="M606 292 C620 308 636 280 650 298 C664 314 678 288 694 302"/>
+          <path d="M660 322 C672 336 690 316 702 330 C714 344 728 322 740 334"/>
+          <path d="M700 196 C712 182 726 204 738 190"/>
+          <path d="M650 276 C662 290 680 268 692 282"/>
+        </g>
+      </g>
+      <g stroke="#2b2b2b" stroke-width="2.2" stroke-linejoin="round" fill="#cfcfcf" pointer-events="none">
+        <path d="M410 196 C380 178 345 168 305 172 C280 170 258 176 246 190 C236 202 244 216 262 216 C290 216 330 214 360 222 C385 228 405 222 410 196 Z"/>
+        <path d="M262 216 C246 216 236 202 246 190 M262 216 C252 210 250 198 258 192" fill="none"/>
+        <path d="M410 324 C380 342 345 352 305 348 C280 350 258 344 246 330 C236 318 244 304 262 304 C290 304 330 306 360 298 C385 292 405 298 410 324 Z"/>
+        <path d="M262 304 C252 310 250 322 258 328" fill="none"/>
+      </g>
+      <g id="organs">
+        <g class="org" data-key="k2">
+          <path class="shape" d="M476 166 C448 196 430 232 430 262 C430 292 448 328 478 356 C500 366 528 360 542 344 C548 334 540 322 526 316 C514 300 506 284 504 262 C502 236 508 212 512 196 C516 182 502 168 490 164 C485 163 480 163 476 166 Z"/>
+          <g class="badge"><circle cx="466" cy="262" r="14"/><text x="466" y="262" transform="rotate(-90 466 262)"></text></g>
+        </g>
+        <g class="org" data-key="t1">
+          <path class="shape" d="M512 200 C520 184 546 178 566 186 C586 196 598 218 600 244 C602 270 592 294 574 308 C562 318 548 320 540 312 C534 304 540 296 550 292 C564 286 570 270 568 252 C566 236 554 228 538 228 C522 228 510 218 512 200 Z"/>
+          <g class="badge"><circle cx="570" cy="214" r="14"/><text x="570" y="214" transform="rotate(-90 570 214)"></text></g>
+        </g>
+        <g class="org" data-key="a7">
+          <path class="shape" d="M556 164 C580 154 620 152 656 158 C680 162 694 172 692 182 C690 190 680 192 670 188 C646 180 616 176 590 177 C572 178 556 180 552 174 C550 170 552 166 556 164 Z"/>
+          <g class="badge"><circle cx="626" cy="167" r="11"/><text x="626" y="167" transform="rotate(-90 626 167)"></text></g>
+        </g>
+        <g fill="none" stroke="#8c8c8c" stroke-width="2" stroke-dasharray="4 4" pointer-events="none">
+          <path d="M611 325 C660 300 710 290 758 284"/>
+          <path d="M658 243 C695 248 726 246 758 240"/>
+        </g>
+        <g class="org" data-key="x5">
+          <path class="shape" transform="translate(605 340) scale(1.4) translate(-580 -333)" d="M546 334 C546 319 559 311 572 314 C578 316 580 322 584 322 C589 322 591 315 598 314 C610 313 615 325 613 335 C611 347 597 353 580 353 C562 353 546 347 546 334 Z"/>
+          <g class="badge"><circle cx="605" cy="349" r="11"/><text x="605" y="349" transform="rotate(-90 605 349)"></text></g>
+        </g>
+        <g class="org" data-key="m9">
+          <path class="shape" transform="translate(655 222) scale(1.4) translate(-651 -212)" d="M620 211 C620 198 634 191 651 191 C667 191 681 198 683 210 C685 221 678 232 668 233 C661 233 658 227 653 227 C647 227 644 233 636 233 C626 233 620 223 620 211 Z"/>
+          <g class="badge"><circle cx="655" cy="216" r="11"/><text x="655" y="216" transform="rotate(-90 655 216)"></text></g>
+        </g>
+        <g class="org" data-key="q4">
+          <path class="shape" d="M706 260 C706 232 726 218 748 222 C764 226 774 245 784 260 C774 275 764 294 748 298 C726 302 706 288 706 260 Z"/>
+          <g class="badge"><circle cx="742" cy="260" r="14"/><text x="742" y="260" transform="rotate(-90 742 260)"></text></g>
+        </g>
+      </g>
+      </g>
+      </g>
+      <g font-family="Source Sans 3, sans-serif" font-size="12" fill="#4d4d4d" pointer-events="none">
+        <text x="288" y="428">xifoide</text>
+        <text x="288" y="800">púbis</text>
+      </g>
+      <g id="labels"></g>
+    </svg>
+    <div class="pop" id="pop"></div>
+    <p class="legend">Esquema didático e simplificado; os rins são retroperitoneais (dorsais) e aparecem por transparência.</p>
+  </section>
+
+  <aside class="card" id="panel">
+    <div id="pPlay">
+      <div class="timer" id="timer"><div><span>Tempo restante</span></div><b id="clock">2:00</b></div>
+      <h2>Identifique as 6 estruturas</h2>
+      <p class="muted">Clique no órgão (ou na etiqueta ao lado) para escolher o nome. Você pode trocar a resposta até entregar. O resultado só aparece depois da entrega.</p>
+      <div class="progress"><div><span class="muted">Respondidas</span><div class="bar"><i id="barFill"></i></div></div><b id="prog">0/6</b></div>
+      <div class="tools"><button class="btn primary" id="bCheck">Entregar</button></div>
+      <div class="exits" id="exits">Saídas da tela: 0</div>
+    </div>
+    <div id="pResult" style="display:none">
+      <h2>Resultado</h2>
+      <div id="sendBox"></div>
+      <div id="resBox" style="display:none">
+        <div id="reason"></div>
+        <div class="nota" id="nota"></div>
+        <p class="muted" id="scoreTxt"></p>
+        <div class="receipt" id="receipt"></div>
+        <p class="muted" style="font-size:14px;margin:0">Sua nota foi registrada. Mostre esta tela ao professor se for solicitado.</p>
+        <p class="muted" id="hiddenNote" style="font-size:15px;margin:10px 0 0">🔒 As respostas e o gabarito não são exibidos. A correção será apresentada pelo professor em sala.</p>
+      </div>
+      <div id="profOnly" style="display:none">
+        <div class="info" id="info"><p class="muted">Clique em um órgão para ver a localização e as observações de ultrassom.</p></div>
+        <p style="margin-top:14px"><b>Para discutir:</b></p>
+        <ol class="disc">
+          <li>Por que o rim direito costuma ser mais difícil de avaliar que o esquerdo?</li>
+          <li>Em qual antímero você posiciona o transdutor para começar pelo baço? E pelo fígado?</li>
+          <li>Como a ecogenicidade relativa (baço &gt; fígado ≥ córtex renal) ajuda a confirmar qual órgão está na tela?</li>
+          <li>Por que a repleção da bexiga e o jejum alteram a qualidade do exame?</li>
+        </ol>
+      </div>
+    </div>
+    <div class="prof" id="prof">
+      <b style="font-size:14px">Modo professor</b>
+      <div class="tools"><button class="btn" id="bKey">Mostrar gabarito</button><button class="btn" id="bReset">↻ Liberar nova tentativa neste aparelho</button></div>
+    </div>
+  </aside>
+</main>
+
+<div class="ov show" id="ovStart"><div class="ovc">
+  <h2>Avaliação: topografia abdominal</h2>
+  <ul>
+    <li>Identifique <b>6 estruturas</b> no cão em decúbito dorsal. Cada acerto vale <b>0,1</b> (total <b>0,6 ponto</b>).</li>
+    <li>Você terá <b>2 minutos</b>. Ao fim do tempo a atividade é entregue automaticamente.</li>
+    <li><b>Não saia desta tela.</b> Trocar de aba, de janela ou de aplicativo é registrado: na <b>1ª saída</b> você recebe um aviso; na <b>2ª</b>, a atividade é <b>encerrada e entregue</b> como estiver.</li>
+    <li>Só há uma tentativa. O início e a entrega ficam registrados. <b>Recarregar ou fechar a página encerra a atividade.</b></li>
+  </ul>
+  <label for="nm">Nome completo</label><input id="nm" autocomplete="off" maxlength="100" placeholder="Seu nome">
+  <label>Turma</label>
+  <div class="turmas"><label class="tr"><input type="radio" name="turma" value="Matutino"> Matutino</label><label class="tr"><input type="radio" name="turma" value="Noturno"> Noturno</label></div>
+  <div class="err" id="startErr" style="display:none"></div>
+  <button class="btn primary" id="bStart" disabled>Iniciar (tela cheia)</button>
+</div></div>
+<div class="ov" id="ovWarn"><div class="ovc alert">
+  <h2>Você saiu da atividade</h2>
+  <p>Esta saída foi <b>registrada</b>. <b>Se sair novamente, a atividade será encerrada e entregue automaticamente.</b></p>
+  <p class="muted">O cronômetro não parou.</p>
+  <button class="btn primary" id="bBack">Voltar à atividade</button>
+</div></div>
+
+<script>
+// Valores injetados pelo Code.gs (doGet). MAPA só chega no modo professor.
+const PROF = <?!= JSON.stringify(prof) ?>;
+const MAPA = <?!= JSON.stringify(mapa) ?>;
+
+const ORGANS = {
+  figado:{name:"Fígado", color:"var(--figado)",
+    loc:"Abdome cranial, imediatamente caudal ao diafragma e em grande parte sob o arco costal. Ocupa os dois antímeros, com a maior massa à direita.",
+    us:"Acesso subxifoide e subcostal (às vezes intercostal). Parênquima homogêneo, geralmente menos ecogênico que o baço. A vesícula biliar aparece anecoica entre os lobos, à direita da linha média."},
+  estomago:{name:"Estômago", color:"var(--estomago)",
+    loc:"Caudal ao fígado. Fundo e corpo ficam no antímero esquerdo; o antro e o piloro cruzam a linha média para a direita.",
+    us:"Parede com camadas visíveis e pregas gástricas. O gás gera reverberação e sombra suja, por isso o jejum prévio ajuda. Avalie a espessura da parede e a motilidade."},
+  baco:{name:"Baço", color:"var(--baco)",
+    loc:"Antímero esquerdo, lateral à curvatura maior do estômago. A cabeça é mais fixa (craniodorsal); corpo e cauda são móveis e podem se estender ventralmente e até cruzar a linha média.",
+    us:"Fica superficial, logo abaixo da parede abdominal esquerda. Textura fina e homogênea, mais ecogênico que o fígado e o córtex renal, com cápsula hiperecoica."},
+  rimd:{name:"Rim direito", color:"var(--rimd)",
+    loc:"Antímero direito, mais cranial que o esquerdo (aprox. T13–L1), alojado na fossa renal do lobo caudado do fígado.",
+    us:"Mais difícil de acessar: pode exigir janela intercostal ou subcostal direita. Identifique o córtex, a medula hipoecoica e o seio/pelve hiperecoico; o fígado adjacente serve de comparação de ecogenicidade."},
+  rime:{name:"Rim esquerdo", color:"var(--rime)",
+    loc:"Antímero esquerdo, mais caudal (aprox. L1–L3) e mais móvel que o direito, próximo ao baço.",
+    us:"Geralmente mais fácil de visualizar. Bom para comparar ecogenicidades: o córtex renal deve ser menos ecogênico que o baço adjacente."},
+  bexiga:{name:"Bexiga urinária", color:"var(--bexiga)",
+    loc:"Abdome caudal, na linha média, cranial à borda do púbis. A posição e o tamanho variam com o grau de repleção.",
+    us:"Conteúdo anecoico e parede fina e lisa. O ideal é avaliá-la moderadamente distendida; com bexiga vazia a parede parece falsamente espessa. Também é a janela para próstata/útero e região do trígono."}
+};
+
+
+const KEYS = Object.keys(ORGANS);
+const SIDS = ['k2','t1','a7','x5','m9','q4'];
+const SLOTS = {
+  k2:{side:'L', y:440, ax:278, ay:466},
+  x5:{side:'L', y:600, ax:191, ay:605},
+  q4:{side:'L', y:770, ax:280, ay:742},
+  t1:{side:'R', y:520, ax:326, ay:570},
+  a7:{side:'R', y:610, ax:373, ay:626},
+  m9:{side:'R', y:700, ax:324, ay:655}
+};
+const DURATION=120, MAX_EXITS=2, STORE='usAbdomeTentativa_v1';
+const BOX_W=250, BOX_H=42, LX=-150, RX=440;
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const svg=$('dog'), stage=$('stage'), pop=$('pop');
+const orgEls={}; document.querySelectorAll('.org').forEach(g=>orgEls[g.dataset.key]=g);
+let st, tick=null, awayTimer=null, confirmArm=false;
+
+function mk(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmt(sec){sec=Math.max(0,Math.ceil(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function store(v){try{ if(v) localStorage.setItem(STORE,JSON.stringify(v)); else localStorage.removeItem(STORE);}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem(STORE));}catch(e){return null;}}
+
+function gs(fn,arg){
+  return new Promise((res,rej)=>{
+    if(!(window.google&&google.script&&google.script.run)) return rej(new Error('Abra a atividade pelo link do Google Apps Script.'));
+    google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](arg);
+  });
+}
+
+/* ---------- etiquetas e seleção ---------- */
+function buildLabels(){
+  const L=$('labels'); L.innerHTML='';
+  for(const k of SIDS){
+    const s=SLOTS[k], x=s.side==='L'?LX:RX, ex=s.side==='L'?LX+BOX_W:RX;
+    const g=mk('g',{class:'lbl','data-key':k},L);
+    const dx=s.ax-ex, dy=s.ay-s.y, d=Math.hypot(dx,dy), r=15;
+    mk('line',{class:'lead',x1:ex,y1:s.y,x2:s.ax-dx/d*r,y2:s.ay-dy/d*r},g);
+    mk('rect',{class:'box',x:x,y:s.y-BOX_H/2,width:BOX_W,height:BOX_H,rx:10},g);
+    mk('circle',{class:'num',cx:x+22,cy:s.y,r:13},g);
+    mk('text',{class:'numt',x:x+22,y:s.y},g).textContent=st.num[k];
+    mk('text',{class:'txt',x:x+44,y:s.y},g);
+    mk('text',{class:'sub2',x:x+44,y:s.y+30},g);
+    g.addEventListener('click',e=>{e.stopPropagation(); onPick(k);});
+  }
+}
+
+function render(){
+  const n=Object.keys(st.ans).length;
+  $('prog').textContent=n+'/6'; $('barFill').style.width=(n/6*100)+'%';
+  if(!confirmArm) $('bCheck').textContent=n<6?'Entregar (faltam '+(6-n)+')':'Entregar';
+  const showKey = PROF && MAPA && (st.checked || st.key);
+  for(const k of SIDS){
+    const g=document.querySelector('.lbl[data-key="'+k+'"]');
+    const t=g.querySelector('.txt'), sub=g.querySelector('.sub2'), shape=orgEls[k].querySelector('.shape');
+    const a=st.ans[k];
+    g.classList.toggle('sel',st.open===k); orgEls[k].classList.toggle('sel',st.open===k);
+    orgEls[k].classList.toggle('answered',!!a);
+    g.classList.remove('ok','bad'); sub.textContent=''; t.classList.remove('empty'); shape.style.fill='';
+    if(showKey && st.checked){
+      const ok=a===MAPA[k];
+      g.classList.add(ok?'ok':'bad');
+      t.textContent=(ok?'✔ ':'✘ ')+(a?ORGANS[a].name:'sem resposta');
+      if(!ok){sub.textContent='Correto: '+ORGANS[MAPA[k]].name; sub.setAttribute('fill','var(--bad)');}
+      shape.style.fill=ORGANS[MAPA[k]].color;
+    } else if(showKey){
+      t.textContent=ORGANS[MAPA[k]].name; shape.style.fill=ORGANS[MAPA[k]].color;
+    } else {
+      t.classList.toggle('empty',!a);
+      t.textContent=a?ORGANS[a].name:'clique para identificar';
+    }
+  }
+  svg.classList.toggle('checked',!!showKey);
+}
+
+function onPick(k){
+  if(st.checked||st.key){ if(PROF&&MAPA) showInfo(k); return; }
+  if(!st.started||st.finished) return;
+  openPop(k);
+}
+function openPop(k){
+  st.open=k; render();
+  const s=SLOTS[k], x=s.side==='L'?LX:RX, m=svg.getScreenCTM();
+  const pt=svg.createSVGPoint(); pt.x=x; pt.y=s.y+BOX_H/2+4;
+  const sp=pt.matrixTransform(m), sr=stage.getBoundingClientRect();
+  let left=sp.x-sr.left; if(s.side==='L') left=Math.max(6,left); else left=Math.min(sr.width-216,left+BOX_W*m.a-210);
+  let top=sp.y-sr.top;
+  pop.innerHTML='<h4>Estrutura '+st.num[k]+': qual órgão?</h4>';
+  KEYS.forEach(o=>{const b=document.createElement('button');b.textContent=ORGANS[o].name;if(st.ans[k]===o)b.className='cur';
+    b.onclick=e=>{e.stopPropagation();st.ans[k]=o;closePop();};pop.appendChild(b);});
+  if(st.ans[k]){const c=document.createElement('button');c.className='clear';c.textContent='Limpar resposta';c.onclick=e=>{e.stopPropagation();delete st.ans[k];closePop();};pop.appendChild(c);}
+  pop.classList.add('show');
+  const ph=pop.offsetHeight; if(top+ph>sr.height-6) top=Math.max(6,sp.y-sr.top-BOX_H*m.d-ph-12);
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+}
+function closePop(){pop.classList.remove('show'); st.open=null; render();}
+function showInfo(k){
+  const o=ORGANS[MAPA[k]];
+  $('info').innerHTML='<h3>'+o.name+'</h3><p><b>Localização:</b> '+o.loc+'</p><div class="us"><p><b>Na ultrassonografia:</b> '+o.us+'</p></div>';
+}
+
+/* ---------- início, cronômetro e saídas ---------- */
+async function startExam(){
+  st.name=$('nm').value.trim();
+  st.turma=(document.querySelector('input[name=turma]:checked')||{}).value||'';
+  const b=$('bStart'); b.disabled=true; b.textContent='Conectando…'; $('startErr').style.display='none';
+  goFull();
+  try{
+    const r=await gs('iniciar',{nome:st.name,turma:st.turma});
+    st.token=r.token;
+  }catch(err){
+    $('startErr').textContent='Não foi possível iniciar: '+(err&&err.message||err)+' Verifique a internet e tente de novo.';
+    $('startErr').style.display=''; b.disabled=false; b.textContent='Iniciar (tela cheia)'; return;
+  }
+  st.started=true; st.t0=Date.now();
+  store({phase:'andamento',token:st.token,name:st.name,turma:st.turma,num:st.num,t0:st.t0});
+  $('ovStart').classList.remove('show'); stage.classList.remove('locked');
+  tick=setInterval(updClock,250); updClock();
+}
+function updClock(){
+  const left=DURATION-(Date.now()-st.t0)/1000;
+  $('clock').textContent=fmt(left); $('timer').classList.toggle('warn',left<=30);
+  if(left<=0) finish('tempo');
+}
+function goFull(){ try{ const el=document.documentElement; const r=el.requestFullscreen&&el.requestFullscreen(); if(r&&r.catch) r.catch(()=>{}); }catch(e){} }
+function registerExit(){
+  if(!st.started||st.finished) return;
+  if($('ovWarn').classList.contains('show')) return;
+  st.exits++;
+  $('exits').textContent='Saídas da tela: '+st.exits; $('exits').classList.add('has');
+  if(st.exits>=MAX_EXITS){ finish('saida'); return; }
+  closePop(); $('ovWarn').classList.add('show');
+}
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) registerExit(); });
+window.addEventListener('blur',()=>{ clearTimeout(awayTimer); awayTimer=setTimeout(()=>{ if(!document.hasFocus()) registerExit(); },1200); });
+window.addEventListener('focus',()=>clearTimeout(awayTimer));
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement && st.started && !st.finished && st.wasFull) registerExit(); st.wasFull=!!document.fullscreenElement; });
+$('bBack').onclick=e=>{e.stopPropagation(); $('ovWarn').classList.remove('show'); goFull();};
+
+$('bCheck').onclick=e=>{
+  e.stopPropagation();
+  const miss=6-Object.keys(st.ans).length;
+  if(miss>0 && !confirmArm){ confirmArm=true; $('bCheck').textContent='Confirmar entrega com '+miss+' em branco'; setTimeout(()=>{confirmArm=false;render();},4000); return; }
+  finish('entregue');
+};
+
+/* ---------- entrega ---------- */
+function finish(reason){
+  if(st.finished) return;
+  st.finished=true; st.checked=true;
+  clearInterval(tick); $('ovWarn').classList.remove('show'); closePop();
+  try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){}
+  const rec={phase:'pendente',token:st.token,name:st.name,turma:st.turma,num:st.num,ans:st.ans,exits:st.exits,reason:reason,
+             used:Math.min(DURATION,(Date.now()-st.t0)/1000),when:new Date().toLocaleString('pt-BR')};
+  store(rec);
+  send(rec);
+}
+async function send(rec){
+  $('pPlay').style.display='none'; $('pResult').style.display='';
+  $('resBox').style.display='none';
+  $('sendBox').innerHTML='<div class="sending"><div class="spin"></div>Enviando sua resposta…</div>';
+  stage.classList.add('locked');
+  try{
+    const r=await gs('registrar',{token:rec.token,nome:rec.name,turma:rec.turma,respostas:rec.ans,saidas:rec.exits,motivo:rec.reason,tempoCliente:Math.round(rec.used)});
+    rec.phase='enviado'; rec.server=r; store(rec);
+    showResult(rec);
+  }catch(err){
+    $('sendBox').innerHTML='<div class="err">Sua resposta ainda <b>não foi registrada</b>: '+esc(err&&err.message||err)+'</div><button class="btn primary" id="bRetry">Tentar enviar novamente</button>';
+    $('bRetry').onclick=()=>send(rec);
+  }
+}
+function showResult(rec){
+  $('pPlay').style.display='none'; $('pResult').style.display='';
+  $('sendBox').innerHTML=''; $('resBox').style.display='';
+  const R={entregue:['Entregue pelo aluno','neutral'],tempo:['Encerrada: tempo esgotado','neutral'],saida:['Encerrada: saiu da tela 2 vezes','bad'],recarga:['Encerrada: página recarregada ou fechada','bad']}[rec.reason]||['Entregue','neutral'];
+  const sv=rec.server||{};
+  $('reason').innerHTML='<span class="reason '+R[1]+'">'+R[0]+'</span>';
+  $('nota').textContent=sv.nota+' / 0,6';
+  $('scoreTxt').textContent=sv.acertos+' de 6 estruturas corretas.';
+  $('receipt').innerHTML=
+    '<div><span>Aluno</span><b>'+esc(rec.name)+'</b></div>'+
+    '<div><span>Turma</span><b>'+esc(rec.turma)+'</b></div>'+
+    '<div><span>Nota</span><b>'+esc(sv.nota)+' / 0,6</b></div>'+
+    '<div><span>Tempo usado</span><span>'+fmt(rec.used)+' de 2:00</span></div>'+
+    '<div><span>Saídas da tela</span><span'+(rec.exits?' style="color:var(--bad);font-weight:700"':'')+'>'+rec.exits+'</span></div>'+
+    '<div><span>Registro</span><span>'+esc(sv.protocolo||'')+'</span></div>'+
+    '<div><span>Data/hora</span><span>'+esc(rec.when)+'</span></div>';
+  const prof=PROF&&MAPA;
+  $('profOnly').style.display=prof?'':'none';
+  $('hiddenNote').style.display=prof?'none':'';
+  if(prof){ stage.classList.remove('locked'); $('labels').style.display=''; }
+  else { stage.classList.add('locked'); $('labels').style.display='none'; }
+  render();
+}
+
+/* ---------- inicialização ---------- */
+function init(){
+  st={ans:{},num:{},open:null,checked:false,key:false,started:false,finished:false,exits:0,wasFull:false};
+  shuffle([1,2,3,4,5,6]).forEach((n,i)=>st.num[SIDS[i]]=n);
+  const saved=load();
+  if(saved && saved.num) st.num=saved.num;
+  for(const k of SIDS) orgEls[k].querySelector('.badge text').textContent=st.num[k];
+  buildLabels(); pop.classList.remove('show'); $('labels').style.display='';
+  $('bKey').textContent='Mostrar gabarito';
+  if(saved && (saved.phase==='enviado'||saved.phase==='pendente')){
+    Object.assign(st,{ans:saved.ans||{},exits:saved.exits||0,started:true,finished:true,checked:true,name:saved.name,turma:saved.turma,token:saved.token});
+    $('ovStart').classList.remove('show');
+    if(saved.phase==='enviado') showResult(saved); else send(saved);
+    return;
+  }
+  if(saved && saved.phase==='andamento'){
+    // recarregou a página no meio da prova: entrega o que houver (nada) como abandono
+    Object.assign(st,{started:true,name:saved.name,turma:saved.turma,token:saved.token,t0:saved.t0});
+    $('ovStart').classList.remove('show');
+    finish('recarga');
+    return;
+  }
+  $('pPlay').style.display=''; $('pResult').style.display='none';
+  if(PROF && MAPA){ // professor: sem cadastro, abre direto com o gabarito para projetar
+    $('ovStart').classList.remove('show'); stage.classList.remove('locked');
+    st.key=true; $('bKey').textContent='Ocultar gabarito'; $('pPlay').style.display='none';
+    $('pResult').style.display=''; $('pResult').querySelector('h2').textContent='Gabarito comentado'; $('resBox').style.display='none'; $('profOnly').style.display='';
+    render(); return;
+  }
+  $('ovStart').classList.add('show'); stage.classList.add('locked');
+  $('clock').textContent='2:00'; $('timer').classList.remove('warn');
+  $('exits').textContent='Saídas da tela: 0'; $('exits').classList.remove('has');
+  $('nm').value=''; document.querySelectorAll('input[name=turma]').forEach(r=>r.checked=false);
+  $('bStart').disabled=true; $('bStart').textContent='Iniciar (tela cheia)';
+  render();
+}
+
+const canStart=()=>{$('bStart').disabled=!($('nm').value.trim().length>=3 && document.querySelector('input[name=turma]:checked'));};
+$('nm').addEventListener('input',canStart);
+document.querySelectorAll('input[name=turma]').forEach(r=>r.addEventListener('change',canStart));
+$('bStart').onclick=e=>{e.stopPropagation(); startExam();};
+for(const k of SIDS) orgEls[k].addEventListener('click',e=>{e.stopPropagation(); onPick(k);});
+document.addEventListener('click',e=>{ if(!pop.contains(e.target) && st.open) closePop(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && st.open) closePop(); });
+window.addEventListener('resize',()=>{ if(st.open) openPop(st.open); });
+document.addEventListener('contextmenu',e=>{ if(!PROF) e.preventDefault(); });
+if(PROF) $('prof').classList.add('show');
+$('bReset').onclick=e=>{e.stopPropagation(); store(null); clearInterval(tick); init();};
+$('bKey').onclick=e=>{e.stopPropagation(); if(st.checked||!MAPA) return; st.key=!st.key;
+  closePop(); $('bKey').textContent=st.key?'Ocultar gabarito':'Mostrar gabarito';};
+init();
+</script>
+</body>
+</html>
